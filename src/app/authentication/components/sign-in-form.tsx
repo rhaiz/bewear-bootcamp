@@ -21,6 +21,9 @@ import { Input } from "@/components/ui/input";
 import z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { authClient } from "@/lib/auth-client";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 const formSchema = z.object({
   email: z.email("Email inválido!"),
@@ -30,6 +33,7 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 const SignInForm = () => {
+  const router = useRouter();
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -38,10 +42,30 @@ const SignInForm = () => {
     },
   });
 
-  const onSubmit = (data: FormValues) => {
-    console.log("Formulario valido e enviado com sucesso!");
-    console.log(data);
-  };
+  async function onSubmit(values: FormValues) {
+    await authClient.signIn.email({
+      email: values.email, // required
+      password: values.password, // required
+      fetchOptions: {
+        onSuccess: () => {
+          toast.success("Login realizado com sucesso!");
+          router.push("/");
+        },
+        onError: (error) => {
+          if (error.error.code === "INVALID_CREDENTIALS") {
+            toast.error("Credenciais inválidas.");
+            return form.setError("email", {
+              message: "Credenciais inválidas.",
+            });
+          }
+          toast.error(error.error.message);
+        },
+      },
+    });
+
+    toast.success("Login realizado com sucesso!");
+  }
+
   return (
     <>
       <Card>
