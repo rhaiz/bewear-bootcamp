@@ -68,7 +68,7 @@ const SignInForm = () => {
 
   return (
     <>
-      <Card>
+      <Card className="w-full">
         <CardHeader>
           <CardTitle>Entrar</CardTitle>
           <CardDescription>Faça login para continuar</CardDescription>
