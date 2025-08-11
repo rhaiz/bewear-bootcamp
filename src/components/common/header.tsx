@@ -2,14 +2,14 @@
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { LogInIcon, LogOutIcon, MenuIcon } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "../avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from "../sheet";
+} from "../ui/sheet";
 import { authClient } from "@/lib/auth-client";
 import Link from "next/link";
 
@@ -17,7 +17,9 @@ const Header = () => {
   const { data: session } = authClient.useSession();
   return (
     <header className="flex items-center justify-between p-5">
-      <Image src="/logo.svg" alt="Logo" width={100} height={26.14} />
+      <Link href="/">
+        <Image src="/logo.svg" alt="Logo" width={100} height={26.14} />
+      </Link>
       <div className="flex items-center">
         <Sheet>
           <SheetTrigger asChild>
