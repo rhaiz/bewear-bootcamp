@@ -1,14 +1,12 @@
-import { ne, relations } from "drizzle-orm";
+import { relations } from "drizzle-orm";
 import {
+  boolean,
   integer,
   pgTable,
   text,
   timestamp,
   uuid,
-  boolean,
 } from "drizzle-orm/pg-core";
-import { on } from "events";
-import { email, number } from "zod";
 
 export const userTable = pgTable("user", {
   id: text("id").primaryKey(),
@@ -81,9 +79,13 @@ export const verificationTable = pgTable("verification", {
 export const categoryTable = pgTable("category", {
   id: uuid().primaryKey().defaultRandom(),
   name: text().notNull(),
-  slug: text().notNull().unique(), // Unique slug for the category, like "clothing"
+  slug: text().notNull().unique(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
+
+export const categoryRelations = relations(categoryTable, ({ many }) => ({
+  products: many(productTable),
+}));
 
 export const productTable = pgTable("product", {
   id: uuid().primaryKey().defaultRandom(),
@@ -91,24 +93,8 @@ export const productTable = pgTable("product", {
     .notNull()
     .references(() => categoryTable.id, { onDelete: "set null" }),
   name: text().notNull(),
-  slug: text().notNull().unique(), // Unique slug for the product, like "t-shirt-blue"
+  slug: text().notNull().unique(),
   description: text().notNull(),
-  // priceInCents: integer("price_in_cents").notNull(),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-});
-
-// export const colorEnum = pgEnum(["Red", "Green", "Blue", "Yellow", "Black", "White"]);
-
-export const productVariantTable = pgTable("product_variant", {
-  id: uuid().primaryKey().defaultRandom(),
-  productId: uuid("product_id")
-    .notNull()
-    .references(() => productTable.id, { onDelete: "cascade" }),
-  name: text().notNull(),
-  color: text().notNull(),
-  slug: text().notNull().unique(), // Unique slug for the variant, like "blue-t-shirt"
-  priceInCents: integer("price_in_cents").notNull(),
-  imageUrl: text("image_url").notNull(), // Dica: guarde suas imagens em armazenamento externos estáticos como AWS S3 ou cloudflare e salve aqui a URL
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -120,9 +106,18 @@ export const productRelations = relations(productTable, ({ one, many }) => ({
   variants: many(productVariantTable),
 }));
 
-export const categoryRelations = relations(categoryTable, ({ many }) => ({
-  products: many(productTable),
-}));
+export const productVariantTable = pgTable("product_variant", {
+  id: uuid().primaryKey().defaultRandom(),
+  productId: uuid("product_id")
+    .notNull()
+    .references(() => productTable.id, { onDelete: "cascade" }),
+  name: text().notNull(),
+  slug: text().notNull().unique(),
+  color: text().notNull(),
+  priceInCents: integer("price_in_cents").notNull(),
+  imageUrl: text("image_url").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
 
 export const productVariantRelations = relations(
   productVariantTable,
@@ -139,19 +134,18 @@ export const shippingAddressTable = pgTable("shipping_address", {
   userId: text("user_id")
     .notNull()
     .references(() => userTable.id, { onDelete: "cascade" }),
-  recipientName: text("recipient_name").notNull(),
-  street: text("street").notNull(),
-  number: text("number").notNull(),
-  complement: text("complement"),
-  city: text("city").notNull(),
-  state: text("state").notNull(),
-  neighborhood: text("neighborhood").notNull(),
-  zipCode: text("zip_code").notNull(),
-  country: text("country").notNull(),
-  phone: text("phone").notNull(),
-  email: text("email").notNull(),
-  cpfOrcnpj: text("cpf_or_cnpj").notNull(),
-  isDefault: boolean("is_default").notNull().default(false),
+  recipientName: text().notNull(),
+  street: text().notNull(),
+  number: text().notNull(),
+  complement: text(),
+  city: text().notNull(),
+  state: text().notNull(),
+  neighborhood: text().notNull(),
+  zipCode: text().notNull(),
+  country: text().notNull(),
+  phone: text().notNull(),
+  email: text().notNull(),
+  cpfOrCnpj: text().notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -168,14 +162,16 @@ export const shippingAddressRelations = relations(
     }),
   }),
 );
+
 export const cartTable = pgTable("cart", {
   id: uuid().primaryKey().defaultRandom(),
   userId: text("user_id")
     .notNull()
     .references(() => userTable.id, { onDelete: "cascade" }),
-  shippingAddressId: uuid("shipping_address_id")
-    .notNull()
-    .references(() => shippingAddressTable.id, { onDelete: "set null" }),
+  shippingAddressId: uuid("shipping_address_id").references(
+    () => shippingAddressTable.id,
+    { onDelete: "set null" },
+  ),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -203,7 +199,7 @@ export const cartItemTable = pgTable("cart_item", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
-export const cartItemTableRelations = relations(cartItemTable, ({ one }) => ({
+export const cartItemRelations = relations(cartItemTable, ({ one }) => ({
   cart: one(cartTable, {
     fields: [cartItemTable.cartId],
     references: [cartTable.id],
